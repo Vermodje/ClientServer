@@ -2,51 +2,56 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
 
-public class ClientConnection extends Thread {
-    private BufferedReader in;
-    private BufferedWriter out;
+class ClientConnection {
     private Socket socket;
+    private BufferedWriter out;
+    private BufferedReader in;
+    private Scanner console;
 
-    public ClientConnection(Socket socket, Client client) throws IOException {
-        this.socket = socket;
-
-    }
-    public void sendMessageToServer(String message)  {
+    ClientConnection(String host, int port) {
         try {
-            out.write(message + "\n");
-            out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-            close();
-        }
-
-    }
-
-    @Override
-    public void run() {
-        while (!socket.isClosed()) {
-        try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            socket = new Socket(host, port);
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            String reply = in.readLine();
-            System.out.println(reply);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            console = new Scanner(System.in);
+            startConnection();
         } catch (IOException e) {
             e.printStackTrace();
-            close();
-        }
-
-
         }
     }
-    public void close(){
+
+    private void startConnection() {
+        String message;
+        while (!socket.isClosed()) {
+            try {
+                message = console.nextLine();
+                out.write(message + "\n");
+                out.flush();
+                if(message.equalsIgnoreCase("Bue")){
+                    closeConnection();
+                    break;
+                }
+                else {
+                    System.out.println(in.readLine());
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        closeConnection();
+    }
+
+    private void closeConnection() {
+        console.close();
         try {
-            in.close();
             out.close();
+            in.close();
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }
